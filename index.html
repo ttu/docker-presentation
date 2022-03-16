@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Docker</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+![:scale 80%](./docker-logo.png)
+
+## for developers
+
+---
+
+# Agenda
+
+1. Docker
+1. Why
+1. Components of docker
+1. Docker command (CLI)
+1. Dockerfile
+1. Example application
+1. Docker-Compose
+1. What next? Orchestration
+
+???
+
+---
+
+# Docker
+
+__Docker__ is a computer program that performs operating-system-level virtualization, aka _"containerization"_.
+
+__Containers__ allow a developer to package up an application with all of the parts it needs and ship it all out as one package. 
+
+The developer can rest assured that the application will __run on any machine__ (_Linux, Windows 10, or MacOS_) regardless of any customized settings that machine might have.
+
+???
+
+* Docker is a tool designed to make it easier to create, deploy, and run applications by using containers
+* All parts, such as libraries and other dependencies
+* Runs on any machine that could differ from the machine used for writing and testing the code
+---
+
+# Docker
+
+This presentation focuses on setting up development environment for application containing React front, C# backend and a database.
+
+--
+
+### Install Docker 
+
+https://docs.docker.com/install/
+
+On Windows:
+```sh
+$ choco install docker
+```
+
+--
+
+<br/>
+Other requirements for examples:
+
+* npm (> 5.2.0) / npx
+* Node (> 11.0)
+* .NET Core (> 2.1)
+
+???
+
+* To upgrade npm might need to upgrade nvm
+* Cloud services support Docker out-of-the-box.
+
+---
+
+## Why?
+
+![:scale 60%](./why.jpg)
+
+--
+
+* Source: https://www.docker.com/why-docker
+
+???
+
+Basic marketing jargon from Docker inc.
+---
+
+## Why?
+
+Developers often bring up these kind of points:
+
+* Easy to move apps between cloud platforms
+* Distribute and share content
+* Accelerate developer onboarding
+* Eliminate environment inconsistencies
+* Easy to scale an application
+* Remediate issues efficiently
+* Easy to start
+* Less OS maintenance
+
+???
+
+* Why not is never an issue, as with microservices this kind of orchestration is pretty often needed
+* Requires configuration
+* 
+
+---
+
+## Docker components
+
+![:scale 30%](./docker-components.jpg)
+
+--
+
+* __Dockerfile__: Definition for building images
+
+--
+
+* __Docker Client__: (CLI) tool used to configure and interact with Docker
+
+--
+
+* __Docker Deamon__: Docker Server. Manages docker objects.
+
+--
+
+* __Images__: Templates used to create containers
+
+--
+
+* __Containers__: Running instance of an image
+
+--
+
+* __Docker Registry__: Central repo of images etc.
+
+---
+
+## Container
+
+* A container is a standard unit of software
+  * Packages up code
+  * All dependencies
+  * Runtime
+  * System tolls / libraries
+  * Settings
+* Lightweight, standalone, executable package of software
+* Application runs quickly and reliably on all environments
+
+![:scale 50%](./container-what-is-container.png)
+
+---
+
+## Containers vs Virtual Machine
+
+![:scale 60%](./container_vs_vm.png)
+
+* VM
+ * Within each virtual machine runs a unique guest operating system
+ * VMs with different OS can run on the same physical server 
+
+
+* Container
+ * Containers sit on top of a physical server and its host OS
+
+???
+* TODO: Clean
+* Each VM has its own binaries, libraries, and applications that it services
+* Containers provide a way to run isolated systems on a single server or host OS
+* Each container shares the host OS kernel and, usually, the binaries and libraries, too
+* Shared components are read-only - Containers are thus exceptionally “light”
+
+---
+
+### How can Windows run Linux containers?
+
+When each container shares the host OS kernel and, usually, the binaries and libraries?
+
+--
+
+#### Solution: Virtual Machines as a base Operating System
+
+![:scale 60%](./hyperv_containers.png)
+
+???
+
+* TODO: Find better image
+---
+
+## Docker CLI / List images
+
+```sh
+# list images
+$ docker images
+
+# Remove image
+$ docker rmi [imagename]
+
+# Force always deletes even if in use
+$ docker rmi -f [imagename]
+
+# Clean system of all crap
+$ docker system prune 
+```
+
+???
+* First we check some CLI commands
+* Then Dockerfile
+* And then do some excercises
+
+---
+
+## Docker CLI / Build image
+
+Build new image from `Dockerfile` with a tag
+
+```sh
+$ docker build -t [tag] .
+$ docker build -f [filename] -t [tag] .
+```
+
+--
+
+#### .dockerignore
+
+Defines what files will be sent to Docker when building
+
+```sh
+.dockerignore
+.env
+.git
+.gitignore
+.vs
+.vscode
+*/bin
+*/obj
+**/.toolstarget
+**/node_modules
+```
+
+???
+
+* E.g. if folder has a node_modules folder, build time is longer
+
+---
+
+## Docker CLI / Run image
+
+Docker run creates a new container from the image
+
+```sh
+$ docker run -d -p 900:3000 --name [containername] [image]
+```
+
+* `-d` / detached
+ * The container runs in the background of your terminal
+ * _If you wan't to read the output, do not use this_
+* `-it` / interactive
+  * Starts the container in the interactive mode that allows you to interact with `/bin/bash` of the container
+* `-p` / port
+  * publish port to localhost (local:container)
+
+---
+
+## Docker CLI / List running containers
+
+```sh
+$ docker run -it -p 900:3000 --rm --name my-front webapp
+```
+
+--
+
+```sh
+$ docker ps
+
+CONTAINER ID     IMAGE      COMMAND         CREATED             STATUS                             PORTS                      NAMES
+b73fdc3a0b5a     webapp     "npm start"     14 seconds ago      Up 13 seconds (health: starting)   0.0.0.0:900->3000/tcp      my-front
+```
+
+List all containers (also stopped)
+```sh
+$ docker ps -a
+```
+
+---
+
+## Docker CLI / Check container info
+
+```sh
+$ docker inspect webapp
+```
+
+```json
+[
+    {
+        "Id": "sha256:fa0f75caf9ce248c6af1ea5d7df6a5ca8b17d30607768a6fc8b508b4640528d5",
+        "RepoTags": [
+            "webapp:latest"
+        ],
+        "RepoDigests": [],
+        ...
+```
+
+???
+* Example that show how to run, list and inspect content
+* TODO: How to get health status: docker inspect --format "{{json .Health }}" webapp
+
+---
+
+## Docker CLI / Start, Stop, Remove container
+
+```sh
+$ docker start [containername]
+
+$ docker stop [containername]
+
+$ docker rm [containername]
+```
+
+--
+
+With _docker stop_ the main process inside the container will receive __SIGTERM__, and after a grace period, __SIGKILL__
+
+--
+
+#### Force the removal of a running container
+
+Uses __SIGKILL__
+
+```sh
+$ docker rm -f [containername]
+```
+
+http://turnoff.us/geek/dont-sigkill/
+
+---
+
+## Dockerfile
+
+Definition for building images
+
+Example: `Dockerfile` in the root of React application:
+
+```yaml
+FROM node:latest
+
+RUN mkdir /app
+WORKDIR /app
+
+COPY ["package.json", "package-lock.json*", "./"]
+RUN npm install
+
+COPY /src /app/src
+COPY /public /app/public
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+
+HEALTHCHECK --interval=1m --timeout=10s --retries=3 CMD curl -f http://localhost:3000 || exit 1
+```
+
+???
+
+* Docker uses cache when building images
+* Do npm install before copying files as if files change, node_modules will come still from cache
+
+---
+
+## Dockerfile
+
+```yaml
+FROM node:latest
+```
+__FROM__: Define an image to use
+
+--
+
+```yml
+RUN mkdir /app
+WORKDIR /app
+```
+
+__RUN__: Execute a command while building the image
+
+__WORKDIR__: Set directory from container where commands will execute
+
+--
+
+```yml
+COPY ["package.json", "package-lock.json*", "./"]
+RUN npm install
+
+COPY . /app/
+```
+
+__COPY__: Copy files from host to image
+
+---
+
+## Dockerfile
+
+```yml
+EXPOSE 3000
+
+CMD ["npm", "start"]
+
+HEALTHCHECK --interval=1m --timeout=10s --retries=3 CMD curl -f http://localhost:3000 || exit 1
+```
+
+__EXPOSE__: Indicates the ports on which a container listens for connections
+
+__CMD__: Set command that will execute when container is started
+
+__HEALTCHECK__: Instruction how Docker will test if container is still ok
+
+???
+
+* Expose is only informative. Can be used for mapping etc. You still need to publish ports
+
+---
+
+## Dockerfile - CMD vs ENTRYPOINT
+
+* __CMD__ sets default command and/or parameters, which can be overwritten from command line when docker container runs.
+
+* __ENTRYPOINT__ sets default command what will always be executed. Additional parameters will be added to ENTRYPOINT
+
+```yml
+FROM node:latest
+
+ENTRYPOINT ["/bin/echo", "Hello ENTRYPOINT"]
+#CMD ["/bin/echo", "Hello CMD"]
+```
+
+```sh
+docker build -t echotest .
+docker run -it echotest
+```
+
+Can have only single __CMD__ and single __ENTRYPOINT__
+
+Use __ENTRYPOINT__ if need to pass more arguments to container
+
+???
+
+* Test with ENTRYPOINT and with CMD
+---
+
+## Healthcheck
+
+```sh
+curl -f http://localhost:3000 || exit 1
+```
+
+__-f (--fail)__ returns an exit code > 0 when the request fails (status != 200 OK)
+
+__|| exit 1__ makes sure that on error only __1__ is returned
+
+
+???
+
+* NOTE: apline images don't have curl
+
+---
+
+## Dockerfile - Multistage builds
+
+Create simple definitions and smaller images
+
+--
+
+```yml
+# build environment
+FROM node:11.1.0-alpine as builder
+
+RUN mkdir /app
+WORKDIR /app
+
+COPY ["package.json", "package-lock.json*", "./"]
+RUN npm install
+
+COPY /src /app/src
+COPY /public /app/public
+
+RUN npm run build
+
+# production environment
+FROM nginx:1.13.9-alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+--
+
+> Alpine: A minimal Docker image based on Alpine Linux with a complete package index and only 5 MB in size
+
+???
+
+* Serving files doesnt need node image
+* Before required 2 different Dockerfiles and some scripting to create intermediate images
+* Compare the size of images after next steps example build
+---
+
+## Example: Docker CLI / Build image
+
+Create React App and add new _Dockerfile_ with content from first Dockerfile example
+```sh
+$ npx create-react-app my-app
+```
+
+--
+
+Build image
+```sh
+$ docker build -t webapp .
+
+# Example build with file name
+$ docker build -f Dockerfile -t webapp .
+
+# Example production image (use multi-stage example)
+$ docker build -f Dockerfile-prod -t webapp:prod .
+```
+
+Remember to add `.dockerignore`.
+
+--
+
+Check images
+```sh
+$ docker images
+```
+
+--
+
+```sh
+REPOSITORY       TAG         IMAGE ID          CREATED          SIZE
+webapp           latest      2ec8ee173d46      19 hours ago     18.4MB
+```
+
+???
+* Tag can contain imagename:tag or just imagename and then tag is latest
+* Compare Alpine and normal image sizes
+* Check build times with and without _.dockerignore_
+
+```sh
+$ docker run -p 3000:3000 --name my-front webapp
+```
+
+???
+
+Run production version
+```sh
+$ docker run -p 4000:80 --name my-front webapp:prod
+```
+---
+
+## Example: Docker CLI / Run image
+
+Create new dotnet web app and add `Dockerfile`
+
+```sh
+$ dotnet new web -n my-backend
+```
+
+--
+
+Add new `Dockerfile`
+
+```yml
+FROM microsoft/dotnet:2.2-sdk AS build
+WORKDIR /app
+COPY . ./
+EXPOSE 5000
+ENTRYPOINT ["dotnet", "run", "--urls", "http://*:5000"]
+```
+
+Remember to add `.dockerignore`
+
+--
+
+Build and start new container
+
+```sh
+$ docker build -t webapi . 
+$ docker run -it -p 5000:5000 --rm --name my-backend webapi
+```
+
+---
+
+## Container communication
+
+```sh
+# Compare exposed ports with and without port publish
+$ docker run -d --name my-redis redis
+$ docker run -d -p 6379:6379 --name my-redis redis
+```
+
+To be able to communicate with __localhost__, container must __publish ports__
+
+To be able to communicate with another __containers__, container must be in the __same network__
+
+Service can reach any other service by using services name
+
+--
+
+![:scale 50%](./container-network.png)
+
+---
+
+## Example: Container communication
+
+![:scale 60%](./container-redis.png)
+
+Start Redis
+```sh
+$ docker run -d -p 6379:6379 --name my-redis redis
+```
+
+--
+
+<br/>
+
+Run __web api__ project locally without __Docker__
+
+```sh
+$ dotnet run
+```
+
+---
+
+## Example: Container communication
+
+![:scale 60%](./container-redis-network.png)
+
+Create a network
+```sh
+$ docker network create --attachable my-network
+
+# List networks
+$ docker network list
+```
+
+--
+
+Launch containers to created network
+```sh
+$ docker run -d -p 6379:6379 --name=my-redis --network=my-network redis
+$ docker run --rm -p 5000:5000 --name=my-backend --network=my-network webapi
+```
+
+--
+
+Need to update connection string from __web api__ to use name of the Redis container (_my-redis_) instead of _localhost_
+
+???
+
+* Is attachable required for default bridged network?
+* No need to publish ports with Redis, if it doesn't need to communicate outside the docker
+* __--network__ defines [Network settings](https://docs.docker.com/engine/reference/run/#network-settings)
+* Proper way to change url is to use env variables
+
+---
+
+## Environment variables
+
+--
+
+Set from `Dockerfile` using __ENV__
+
+Set from CLI using __-e__ parameter
+
+--
+
+#### .NET Core example:
+
+_appsettings.json_
+
+```json
+{
+  "Connections": {
+    "Redis": "localhost"
+  }
+}
+```
+
+--
+
+__NOTE:__ Use `__` to define `.`, e.g. _Connection.Redis_ is _Connection__Redis_
+
+```sh
+$ docker run --rm -p 5000:5000 -e Connections__Redis=my-redis --name=my-backend --network=my-network webapi
+```
+
+???
+
+* Replacing configuration parameters works with magic
+* https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-2.1
+
+---
+
+## Example: Container communication
+
+![:scale 60%](./container-webapp-network.png)
+
+```sh
+$ docker run --rm -p 3000:3000 --name=my-front --network=my-network webapp
+$ docker run --rm -p 5000:5000 -e Connection__Redis=my-redis --name=my-backend --network=my-network webapi
+
+# Note: Network and Redis should be created from the previous example
+$ docker network create --attachable my-network
+$ docker run -d -p 6379:6379 --name=my-redis --network=my-network redis
+```
+
+---
+
+## Example: Container communication
+
+Use another container's network
+
+```sh
+$ docker run --rm -d -p 5000:5000 --name=my-backed webapi
+
+# Can't publish ports when joining another network
+$ docker run --rm -d -p 3000:3000 --name=my-front --net=container:my-backend webapp
+```
+
+Create _webapp_ first with backends port exposed
+
+```sh
+$ docker run --rm -d -p 3000:3000 -p 5000:5000 --name=my-front webapp
+$ docker run --rm -d -e Connection__Redis=my-redis --name=my-backend --net=container:my-front webapi
+docker run -d --name=my-redis --net=container:my-front redis
+```
+
+???
+
+* Expose ports without publishing them to the host machine — they’ll only be accessible to linked services on the same network.
+* Ports will publish ports to localhost
+* If want to restict communication use networks
+ 
+---
+
+## Example: Container communication
+
+_LINK IS DEPRECATED BUT MANY EXAMPLES STILL USE IT_
+
+Containers can be linked to another container’s ports directly using -link remote_name:local_alias in the client’s docker run. 
+
+```sh
+$ docker run -d --name some-app \
+      --link some-postgres:postgres \
+      app-using-postgres
+```
+
+???
+
+* Many examples still use this
+
+---
+
+## Login to container
+
+Sometimes the easiest way to check what is happening in the container is to log in
+
+```sh
+$ docker exec -it [containername] /bin/bash
+```
+
+--
+
+<br/>
+
+
+Note: Can't login to __Alpine__ images without installing __bash__
+
+???
+
+
+---
+
+## Developing with Docker
+
+How to do actual development in the container without repeating rebuild image / start new container cycle?
+
+--
+
+<br/>
+Share files by defining the shared volume:
+
+```sh
+$ docker run --rm -p 5000:5000 \
+      -v [source]:[target] \
+      -w [targetworkdir] \
+      [image] dotnet watch run
+```
+
+???
+
+* Volume will ignore _.dockerignore_ and send all files to container
+
+---
+
+## Example: Watch
+
+Use previously created .NET Core project and start container with the command
+
+```sh
+$ dotnet watch run
+```
+
+Windows uses `%cd%` for current directory
+
+```sh
+$ docker run --rm -it -p 5000:5000 -v %cd%:/app/ -w /app microsoft/dotnet:2.1-sdk dotnet watch run --urls http://*:5000
+```
+
+--
+
+_Linux_ and _Powershell_ use `${PWD}`
+
+```sh
+$ docker run --rm -it -p 5000:5000 -v ${PWD}:/app/ -w /app microsoft/dotnet:2.1-sdk dotnet watch run --urls http://*:5000
+```
+
+---
+
+## Example: Watch .NET Core Application
+
+Change _ENTRYPOINT_ from previously created _Dockerfile_ and build as _dotnet-watch-example_
+```yaml
+ENTRYPOINT ["dotnet", "watch", "run", "--urls", "http://*:5000"]
+```
+
+```sh
+$ docker run --rm -it -p 5000:5000 -v %cd%:/app/ -w /app dotnet-watch-example
+```
+
+Or change _ENTRYPOINT_ to _CMD_ from _Dockerfile_ if using previous example and add new start command
+
+```sh
+$ docker run --rm -it -p 5000:5000 -v %cd%:/app/ -w /app -e Connections__Redis=my-redis --network my-network --name my-backend webapi dotnet watch run --urls http://*:5000
+```
+
+???
+
+* docker run --rm -it -p 5000:5000 -v %cd%:/app/ -w /app -e Connections__Redis=my-redis --network my-network --name my-backend webapi dotnet watch run --urls http://*:5000
+* docker run --rm -it -p 5000:5000 -v %cd%:/app/ -w /app -e Connections__Redis=my-redis --network my-network --name my-backend webapi
+
+---
+
+## Example: Watch React Application
+
+```sh
+$ docker run --rm -it -p 3000:3000 -v %cd%:/app -e CHOKIDAR_USEPOLLING=true --name my-front webapp
+```
+
+_create-react-app_ requires __CHOKIDAR_USEPOLLING__ environment variable to be set to _true_
+
+---
+
+## Example: Debug React Application
+
+Use VS Code. Update _launch.json_. __sourceMapPathOverrides__ must contain correct folder that mactches container folder structure.
+```json
+"configurations": [
+    {
+      "type": "chrome",
+      "request": "attach",
+      "name": "Attach to Chrome",
+      "port": 9222,
+      "webRoot": "${workspaceFolder}/src",
+      "sourceMapPathOverrides": {
+        "/app/src/*": "${webRoot}/*"
+      }
+    }
+  ]
+```
+
+--
+
+Normal Create React App had __sourceMapPathOverrides__:
+```json
+"sourceMapPathOverrides": {
+  "webpack:///src/*": "${webRoot}/*"
+}
+```
+
+???
+
+* Remember to check that remote debugging is enabled from Chrome
+
+---
+
+## Develop .NET Core Application
+
+`bin` and `obj` folders have the compiled version of the application. Container and local need own directories.
+
+--
+
+Add `Directory.Build.props` file to the project and add _ENV_ variable `DOTNET_RUNNING_IN_CONTAINER=true`
+
+Add from command line
+```sh
+$ docker run -e DOTNET_RUNNING_IN_CONTAINER=true ...
+```
+
+Add to _Dockerfile_
+```yml
+ENV DOTNET_RUNNING_IN_CONTAINER true
+```
+
+???
+
+* When developing from container and local at the same time, 2 sets of folders are required
+* https://github.com/dotnet/dotnet-docker/blob/master/samples/dotnetapp/dotnet-docker-dev-in-container.md#requirements
+* Can't use localhost and have to use 0.0.0.0
+* Unable to bind to http://localhost:5000 on the IPv6 loopback interface: 'Cannot assign requested address'.
+
+---
+
+## Develop .NET Core Application
+
+Add `Directory.Build.props`-file to the root of the project
+
+```xml
+<Project>
+
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildProjectDirectory)/obj/**/*</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildProjectDirectory)/bin/**/*</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(DOTNET_RUNNING_IN_CONTAINER)' == 'true'">
+    <BaseIntermediateOutputPath>$(MSBuildProjectDirectory)/obj/container/</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(MSBuildProjectDirectory)/bin/container/</BaseOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(DOTNET_RUNNING_IN_CONTAINER)' != 'true'">
+    <BaseIntermediateOutputPath>$(MSBuildProjectDirectory)/obj/local/</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(MSBuildProjectDirectory)/bin/local/</BaseOutputPath>
+  </PropertyGroup>
+  
+</Project>
+```
+
+
+---
+
+## Debug .NET Core Application
+
+VS has _Docker Tools_ installed, but it only works out-of-the-box in simple cases
+
+--
+
+VS Default commands:
+
+```sh
+# Build image
+$ docker build -f "C:\src\GitHub\chat-server\src\ChatServer\Dockerfile" \
+          -t chatserver:dev --target base "C:\src\GitHub\chat-server\src"
+
+# Run image
+$ docker run -dt -v "C:\Users\tomit\vsdbg\vs2017u5:/remote_debugger:rw" \
+          -v "C:\src\GitHub\chat-server\src\ChatServer:/app" \
+          -v "C:\Users\tomit\AppData\Roaming\ASP.NET\Https:/root/.aspnet/https:ro" \
+          -v "C:\Users\tomit\AppData\Roaming\Microsoft\UserSecrets:/root/.microsoft/usersecrets:ro" \
+          -v "C:\Users\tomit\.nuget\packages\:/root/.nuget/fallbackpackages2" \
+          -v "C:\Program Files\dotnet\sdk\NuGetFallbackFolder:/root/.nuget/fallbackpackages" \
+          -e "DOTNET_USE_POLLING_FILE_WATCHER=1" \
+          -e "ASPNETCORE_ENVIRONMENT=Development" \
+          -e "ASPNETCORE_URLS=https://+:443;http://+:80" \
+          -e "ASPNETCORE_HTTPS_PORT=44358" \
+          -e "NUGET_PACKAGES=/root/.nuget/fallbackpackages2" \
+          -e "NUGET_FALLBACK_PACKAGES=/root/.nuget/fallbackpackages;/root/.nuget/fallbackpackages2" \
+          -p 51600:80 \
+          -p 44358:443 \
+          --entrypoint tail chatserver:dev -f /dev/null
+```
+
+???
+
+* VS Configuration
+* Debugging sucks
+ * Same as with IIS applications
+ * Running somewhere else, and needs a remote debuggin connection (SSH)
+* Why can't dotnet have a debug port like node?
+* Multiline in Windows
+```sh
+$ docker build -f "C:\src\GitHub\chat-server\src\ChatServer\Dockerfile" ^
+          -t chatserver:dev --target base "C:\src\GitHub\chat-server\src"
+```
+
+---
+
+## Debug .NET Core Application
+
+Dockerfile with debug
+
+```yaml
+FROM microsoft/dotnet:2.1-sdk AS build
+
+RUN apt-get update && apt-get -y install openssh-server unzip
+
+RUN echo "root:Docker!" | chpasswd
+
+RUN mkdir /var/run/sshd && chmod 0755 /var/run/sshd 
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
+RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+RUN sed -i 's/#StrictModes yes/StrictModes no/g' /etc/ssh/sshd_config
+
+RUN service ssh restart
+
+RUN mkdir /root/.vs-debugger && chmod 0755 /root/.vs-debugger
+RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v vs2017u1 -l /root/.vs-debugger/
+
+EXPOSE 22 
+
+WORKDIR /app
+EXPOSE 5550
+
+COPY . ./
+
+ENTRYPOINT ["dotnet", "watch", "run", "--urls", "http://*:5000"]
+```
+
+---
+
+## Debug .NET Core Application
+
+```sh
+# Build and run
+$ docker build -f Dockerfile-debug -t dotnet-watch-example:debug .
+$ docker run --rm -it -p 5000:5000 -p 10222:22 -v %cd%:/app/ -w /app --name dotnetdebug -e "DOTNET_RUNNING_IN_CONTAINER=true" dotnet-watch-example:debug
+
+# SSH should be already on but often needs to be started again
+$ docker exec -it dotnetdebug /bin/bash
+$ service ssh start
+```
+
+### Attach to debugger
+
+* Debug -> Attach to process -> SSH 
+  * url: localhost
+  * port: 10222 
+  * username: root
+  * passowrd: Docker! 
+* Attach to dotnet exec /app/bin/container/xxxxxx process
+* Select Managed (.NET Core for Unix)
+
+---
+
+## Run debug container as a side car
+
+Create _Dockerfile-debugger_
+
+```yml
+FROM microsoft/dotnet:2.2-sdk AS build
+
+RUN apt-get update && apt-get -y install openssh-server unzip
+
+RUN echo "root:Docker!" | chpasswd
+
+RUN mkdir /var/run/sshd && chmod 0755 /var/run/sshd 
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
+RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+RUN sed -i 's/#StrictModes yes/StrictModes no/g' /etc/ssh/sshd_config
+
+RUN service ssh restart
+
+RUN mkdir /root/.vs-debugger && chmod 0755 /root/.vs-debugger
+RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v vs2017u1 -l /root/.vs-debugger/
+
+EXPOSE 22 
+```
+
+Build
+```sh
+$ docker build -f Dockerfile-debugger -t dotnetdebugger .
+```
+
+---
+
+## Run debug container as a side car
+
+Start container as a side car
+```sh
+$ docker run -it -p 10222:22 --pid container:[containername] dotnetdebugger
+```
+
+--
+
+#### NOTE 
+
+Connecting the debugger worked, but couldn't get breakpoints working
+
+---
+
+## Simple use case example: GitHub pages
+
+Want to test GitHub pages locally before deploying to github.io?
+
+Requirements:
+* Install Jekyll
+* Install Ruby
+* Install some Ruby Gems
+* Install ...
+
+Easier to use Docker image: [starefossen/github-pages](https://github.com/Starefossen/docker-github-pages)
+
+```sh
+$ docker run --rm -v %cd%:/usr/src/app -p 4000:4000 starefossen/github-pages
+```
+
+Go to http://localhost:4000
+
+???
+
+* No need to "pollute" own dev machine with all frameworks and packages that are not needed
+* TODO: Where to get basic files?
+
+---
+
+## Use case: SQL Server
+
+Installing a SQL Server is always a little painful experience
+
+```yml
+# Based on https://github.com/mcmoe/mssqldocker
+
+FROM microsoft/mssql-server-linux:latest
+
+ENV ACCEPT_EULA=Y
+ENV SA_PASSWORD=OKu77dNUZklqdtrGhK9N
+
+# Create a config directory
+RUN mkdir -p /usr/config
+WORKDIR /usr/config
+
+# Bundle config source
+COPY . /usr/config
+
+# Grant permissions for to our scripts to be executable
+RUN chmod +x /usr/config/entrypoint.sh
+RUN chmod +x /usr/config/configure-db.sh
+
+ENTRYPOINT ["./entrypoint.sh"]
+
+# Tail the setup logs to trap the process
+CMD ["tail -f /dev/null"]
+
+HEALTHCHECK --interval=15s CMD /opt/mssql-tools/bin/sqlcmd -U sa -P $SA_PASSWORD -Q "select 1" && grep -q "MSSQL CONFIG COMPLETE" ./config.log
+```
+
+???
+
+* TODO: Check that this works
+
+---
+
+## Use case: SQL Server
+
+`entrypoint.sh`
+```bin
+#!/bin/bash
+# Start SQL Server
+/opt/mssql/bin/sqlservr &
+# Start the script to create the DB and user
+/usr/config/configure-db.sh
+# Call extra command
+eval $1
+```
+
+---
+
+## Use case: SQL Server
+
+`configure-db.sh` (uses `setup.sql` file that containes DB initialization)
+```bin
+#!/bin/bash
+
+# wait for MSSQL server to start
+export STATUS=1
+i=0
+
+while [[ $STATUS -ne 0 ]] && [[ $i -lt 30 ]]; do
+	i=$i+1
+	/opt/mssql-tools/bin/sqlcmd -t 1 -U sa -P $SA_PASSWORD -Q "select 1" >> /dev/null
+	STATUS=$?
+done
+
+if [ $STATUS -ne 0 ]; then 
+	echo "Error: MSSQL SERVER took more than thirty seconds to start up."
+	exit 1
+fi
+
+echo "======= MSSQL SERVER STARTED ========" | tee -a ./config.log
+# Run the setup script to create the DB and the schema in the DB
+/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SA_PASSWORD -d master -i setup.sql
+
+echo "======= MSSQL CONFIG COMPLETE =======" | tee -a ./config.log
+```
+
+---
+
+## Docker Compose
+
+Compose is a tool for defining and running multi-container Docker applications
+
+Compose runs all the containers on the same host
+
+By default Compose sets up a single network for your app 
+
+```yml
+version: '3.4'
+
+services:
+  app.front:
+    build: ./my-app/
+    ports:
+     - "3000:3000"
+    environment:
+     - CHOKIDAR_USEPOLLING=true
+    volumes:
+     - "./my-app/:/app"
+```
+
+_continues on the next pages_
+
+???
+
+* Each container for a service joins the default network and is both reachable by other containers on that network, and discoverable by them at a hostname identical to the container name.
+
+---
+
+## Docker Compose
+
+_continues..._
+
+```yml
+  app.backend:
+      build: ./my-backend/
+      restart: on-failure
+      ports:
+       - "5000:5000"
+      depends_on:
+       - redis
+      environment:
+       - DOTNET_RUNNING_IN_CONTAINER=true
+       - Connections__Redis=redis
+      volumes:
+       - "./my-backend:/app"
+    redis:
+      image: "redis"
+      ports:
+        - "6379:6379"
+      healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 30s
+        timeout: 2s
+        retries: 10
+```
+
+???
+
+* Create compose step by step from this example
+* Show how build, up, restart cycle works
+---
+
+## Docker Compose
+
+```sh
+$ docker-compose build
+$ docker-compose up
+
+# Detached
+$ docker-compose up -d
+```
+
+--
+
+When you make changes to a single container
+```sh
+$ docker-compose build [service]
+$ docker-compose restart [service]
+```
+
+???
+
+* Antimalware: Add docker-compose.exe
+* Health checks to Dockerfiles so they are automatically added
+* volumes can define named volumes tahat can be used on a multiple services
+---
+
+## Container start order
+
+`depends_on` only waits that container starts, not that e.g. DB is actually ready
+
+`depends_on` used to have a condition variable, but it was removed
+
+https://docs.docker.com/compose/startup-order/
+
+Solutions:
+* Use a polling script (`wait_for_it.sh`)
+* Use polling in application
+* Let app crash and force restart
+
+
+Let it crash and wait examples
+```yaml
+version: '3'
+services:
+  chatserver.api:
+    build: ./src/ChatServer
+    restart: on-failure
+  chatbroker.api:
+    build ./src/ChatBroker
+    command: ["./wait-for-it.sh", "chatserver.api:5432"]
+```
+
+???
+* https://github.com/vishnubob/wait-for-it
+---
+
+## Example: Docker Compose
+
+
+https://github.com/ttu/chat-server
+
+
+Python example blog post:
+
+https://medium.com/@Empanado/efficient-development-with-docker-and-docker-compose-e354b4d24831
+
+---
+
+## Read more on Docker Compose
+
+Use single `Dockerfile` for dev and prod with `docker-compose`
+
+https://blog.mikesir87.io/2018/07/leveraging-multi-stage-builds-single-dockerfile-dev-prod/
+
+Share compose comfigurations
+
+https://docs.docker.com/compose/extends/
+
+---
+
+## Docker Swarm
+
+"Docker Swarm is a clustering and scheduling tool for Docker containers"
+
+![:scale 80%](./docker-swarm.png)
+
+???
+* Can manage Docker Swarm from CLI or management UI
+* [Swarm feature highlights](https://docs.docker.com/engine/swarm/#feature-highlights)
+---
+
+## Kubernetes
+
+“Kubernetes is an open-source system for automating deployment, scaling, and management of containerized applications.”
+
+Kubernetes (__k8s__) is built by Google
+
+![:scale 70%](./kubernetes.png)
+
+???
+
+* TODO: Add comparisons
+* https://dzone.com/articles/docker-swarm-vs-kubernetes-what-you-really-need-to
+* https://platform9.com/blog/kubernetes-docker-swarm-compared/
+---
+
+# Services provided by both
+
+* Cluster management
+* Fault tolerance
+* Scaling
+* Service Discovery
+* Load Balancing
+* ...
+
+---
+
+# Criticism on both
+
+> _"Kubernetes is very complex to run and drives people back a little bit to the old high priest model"_
+
+> _“someone maintains the infrastructure and you write the app and then you have them deploy it”_
+
+https://theagileadmin.com/2018/10/02/sre-the-biggest-lie-since-kanban/
+
+???
+
+* Because of modern architectures, everyone thinks they need these, although your app is not Uber
+* Distributed big ball of mud
+* Cargo cult is doing well in modern times
+
+---
+
+## More links
+
+[Docker best practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+
+[Kubernetes for Python developers](https://www.distributedpython.com/2018/11/28/kubernetes-python-developers-part-1/)
+
+[Kubernetes in 5 mins](https://www.youtube.com/watch?v=PH-2FfFD2PU)
+
+### Docker trainings
+
+[Docker training](https://training.play-with-docker.com/#dev)
+
+[Docker Swarm training](https://training.play-with-docker.com/#ops)
+
+---
+
+# References
+
+* https://blog.netapp.com/blogs/containers-vs-vms/
+* https://social.technet.microsoft.com/wiki/contents/articles/33664.windows-server-2016-windows-containers-vs-hyper-v-containers.aspx
+* https://dzone.com/articles/docker-containers-and-kubernetes-an-architectural
+* https://thenewstack.io/kubernetes-vs-docker-swarm-whats-the-difference/
+* https://github.com/dotnet/dotnet-docker/blob/master/samples/dotnetapp/dotnet-docker-dev-in-container.md?WT.mc_id=-blog-scottha
+* https://platform9.com/blog/kubernetes-docker-swarm-compared/
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      remark.macros.scale = function (percentage) {
+        var url = this;
+        return '<div style="text-align: center;"><img src="' + url + '" style="width: ' + percentage + '" /></div>';
+      };
+
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
